@@ -1,0 +1,37 @@
+#!/usr/bin/Rscript --vanilla
+
+# This script takes your net wealth in EUR and returns 
+# all currencies in which you are a millionaire using 
+# the current exchange rates provided by OANDA.
+#
+# Copyright (C) 2013 by Juergen Pahle. All rights reserved.
+
+suppressMessages(library(XML))
+args <- commandArgs(trailingOnly=TRUE)
+if (interactive()) {
+  cat("Your wealth in EUR: ")
+  thesum <-scan(n=1, quiet=TRUE)
+} else if (length(args)>0) {
+  thesum <- as.numeric(args[1])
+} else {
+  stop("millionaire.R: no argument given in non-interactive mode!")
+}
+thecutoff <- 1000000
+thedate <- format(Sys.time(), "%D")
+theurl <- paste0("http://www.oanda.com/currency/table?date=", thedate, "&date_fmt=us&exch=EUR&sel_list=\
+                 ADF_ADP_AED_AFN_ALL_AMD_ANG_AOA_AON_ARS_ATS_AUD_AWG_AZM_AZN_BAM_BBD_BDT_BEF_BGN_BHD_BIF_\
+                 BMD_BND_BOB_BRL_BSD_BTN_BWP_BYR_BZD_CAD_CDF_CHF_CLP_CNY_COP_CRC_CUC_CUP_CVE_CYP_CZK_DEM_\
+                 DJF_DKK_DOP_DZD_ECS_EEK_EGP_ESP_ETB_EUR_FIM_FJD_FKP_FRF_GBP_GEL_GHC_GHS_GIP_GMD_GNF_GRD_\
+                 GTQ_GYD_HKD_HNL_HRK_HTG_HUF_IDR_IEP_ILS_INR_IQD_IRR_ISK_ITL_JMD_JOD_JPY_KES_KGS_KHR_KMF_\
+                 KPW_KRW_KWD_KYD_KZT_LAK_LBP_LKR_LRD_LSL_LTL_LUF_LVL_LYD_MAD_MDL_MGA_MGF_MKD_MMK_MNT_MOP_\
+                 MRO_MTL_MUR_MVR_MWK_MXN_MYR_MZM_MZN_NAD_NGN_NIO_NLG_NOK_NPR_NZD_OMR_PAB_PEN_PGK_PHP_PKR_\
+                 PLN_PTE_PYG_QAR_ROL_RON_RSD_RUB_RWF_SAR_SBD_SCR_SDD_SDG_SDP_SEK_SGD_SHP_SIT_SKK_SLL_SOS_\
+                 SRD_SRG_STD_SVC_SYP_SZL_THB_TJS_TMM_TMT_TND_TOP_TRL_TRY_TTD_TWD_TZS_UAH_UGX_USD_UYU_UZS_\
+                 VEB_VEF_VND_VUV_WST_XAF_XAG_XAU_XCD_XEU_XOF_XPD_XPF_XPT_YER_YUN_ZAR_ZMK_ZMW_ZWD&\
+                 value=1&format=HTML&redirected=1")
+rates <- readHTMLTable(theurl, which=1, header=TRUE, colClasses=c("character", "character", "numeric", "numeric"), skip.rows=c(1, 2, 200), stringsAsFactors=FALSE)
+rates <- subset(rates, complete.cases(rates))
+rates$Sum <- rates$"Units/1 EUR" * thesum
+result <- rates[rates$Sum >= thecutoff, c("Currency", "Code", "Sum")]
+row.names(result) <- NULL
+print(result)
